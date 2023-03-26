@@ -1,0 +1,56 @@
+---
+title: "R第10回課題"
+author: ""
+date: "`r Sys.time()`"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+## このチャンクには何も書かないこと。
+## このチャンクを実行「ctrl」+「Enter」しましょう。
+library(tidyverse)
+```
+
+# 1.
+
+従属変数をテレビ視聴時間、独立変数を年齢・教育年数・世間一般と比べた世帯収入、家族そろった夕食とした重回帰分析を行う。
+
+```{r}
+jgss2000 <- read_csv("Data/jgss2000_v20210809.csv")
+
+##家族そろった夕食の反転項目を作成する
+jgss2000 <- jgss2000 %>% 
+  mutate(fq7ffdnr_r = 8 - fq7ffdnr)
+
+##世間一般と比べた世帯収入（OP5FFINX)と家族そろった夕食（FQ7FFDNR_R）の度数分布の確認
+jgss2000 %>% 
+  count(op5ffinx,fq7ffdnr_r)
+
+##重回帰分析
+model1 <- lm(hrtv ~ ageb + educyr + op5ffinx + fq7ffdnr_r,
+             data = jgss2000)
+summary(model1)
+library(modelsummary)
+cm <- c("(Intercept)" = "切片",
+        "ageb" = "年齢",
+        "educyr" = "教育年数",
+        "op5ffinx" = "世間一般と比べた世帯収入",
+        "fq7ffdnr_r" = "家族そろった夕食")
+modelsummary(list(model1),
+             fmt = 2,
+             stars = TRUE,
+             statistic = "conf.int",
+             coef_map = cm,
+             gof_map = c("nobs", "r.squared", "adj.r.squared"))
+
+##多重共線性の診断
+library(car)
+vif(model1)
+```
+
+テレビ視聴時間を従属変数、年齢・教育年数・世間一般と比べた世帯収入・家族そろった夕食（の頻度）を独立変数とする重回帰分析を行ったところ、年齢、教育年数、世間一般と比べた世帯収入、家族そろった夕食（の頻度）すべてが有意に関連していた。年齢が高いほど、テレビの視聴時間は長くなり、教育年数が長いほど、世間一般と比べた世帯収入が多いほど、家族そろった夕食（の頻度）が多いほど、テレビ視聴時間は短かった。
+
+## 家族そろった夕食とテレビ視聴時間の関連についての予測
+
+私が選んだ変数「家族そろった夕食」について、その頻度が高いほど、家族でテレビを前に食卓を囲むことが多くなる可能性があるため、テレビ視聴時間は多くなるのではないかと予測した。
+

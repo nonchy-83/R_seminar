@@ -1,0 +1,82 @@
+---
+title: "R第11回課題"
+author: ""
+date: "`r Sys.time()`"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+## このチャンクには何も書かないこと。
+## このチャンクを実行「ctrl」+「Enter」しましょう。
+library(tidyverse)
+```
+
+# 1.
+```{r}
+jgss2000 <- read_csv("Data/jgss2000_v20210809.csv")
+
+##女性ダミーの作成
+jgss2000 <- jgss2000 %>% 
+  mutate(female_dm = as.factor(sexa - 1))
+
+##確認
+jgss2000 %>% 
+  count(sexa, female_dm)
+```
+
+
+# 2.
+```{r}
+
+##変数の型の確認
+class(jgss2000$op3trust)
+
+##データを因子型に変換し、いいえを参照カテゴリに設定
+jgss2000 <- jgss2000 %>% 
+  mutate(op3trust = as.factor(op3trust),
+         op3trust = fct_relevel(op3trust, "2"))
+
+##型とレベルの確認
+class(jgss2000$op3trust)
+levels(jgss2000$op3trust)
+```
+
+
+# 3.
+幸福感に影響を与えそうな独立変数を、「OP5HLTHZ」健康状態に設定する。健康であるほど、幸福感が高いということだ。健康であるほど、生活習慣が整っていたり、運動ができていたり、精神的に安定していたりするため、それによって日常生活の悩みが減り、生活に余裕が生まれる人、何かに打ち込める人がでてくることで、結果的に健康であることが幸福感につながることが予想される。
+
+```{r}
+##健康度合いを反転
+##世帯収入を100万単位に換算した変数をつくる
+jgss2000 <- jgss2000 %>% 
+  mutate(op5hlthz_r = 6 - op5hlthz,
+         op5happz_r = 6 - op5happz,
+         incomehouse100 = incomehouse / 100)
+
+##重回帰モデルを組む
+model1 <- lm(op5happz_r ~ female_dm + ageb + educyr + op5hlthz_r + incomehouse100,
+             data = jgss2000)
+summary(model1)
+
+library(modelsummary)
+cm <- c("(Intercept)" = "切片",
+        "female_dm1" = "女性ダミー",
+        "ageb" = "年齢",
+        "educyr" = "教育年数",
+        "op5hlthz_r" = "健康度合い",
+        "incomehouse100" = "世帯年収（100万）")
+modelsummary(list(model1),
+             fmt = 2,
+             stars = TRUE,
+             statistic = "conf.int",
+             coef_map = cm,
+             gof_map = c("nobs", "r.squared", "adj.r.squared"))
+
+```
+
+従属変数は、幸福度であり、「あなたは現在幸せですか」という質問に「１幸せ」から「５不幸せ」まで5段階で回答を求め、反転した。
+独立変数は、健康度であり、「あなたの現在の健康状態は、いかがですか」という質問に「１良い」から「５悪い」まで5段階で回答を求め、反転した。
+統制変数は、性別、年齢、教育年数、世帯収入である。性別は、「女性ダミー」とした。教育年数は、最後に通った学校をもとに教育を受けた年数を算出した。世帯収入は「なし」から「2300万円以上」まで19段階で質問し、それぞれの選択肢の中間値を用いた。分析では百万単位に換算した数値を投入した。
+
+従属変数を幸福度、独立変数を健康度合い、統制変数を性別、年齢、教育年数、世帯収入とする重回帰分析を行った。結果は表の通りである。健康度合いでは、健康状態が良好であるほど幸福度が高いという統計的に有意な結果がみられた。統制変数では、年齢、世帯収入が統計的に有意な正の関連がみられた。
+

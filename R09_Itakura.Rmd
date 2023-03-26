@@ -1,0 +1,52 @@
+---
+title: "R第9回課題"
+author: ""
+date: "`r Sys.time()`"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+## このチャンクには何も書かないこと。
+## このチャンクを実行「ctrl」+「Enter」しましょう。
+library(tidyverse)
+options(scipen = 100)
+jgss2000 <- read_csv("Data/jgss2000_v20210809.csv")
+```
+
+# 1.
+変数yを指すもの：従属変数、目的変数、被説明変数、応答変数、基準変数
+変数xを指すもの：独立変数、説明変数、予測変数
+
+# 2.
+```{r}
+##40歳代女性のみのデータセットをつくる
+jgss2000_f40s <- jgss2000 %>% 
+  filter(sexa == 2 & ageb >=40 & ageb <50)
+##独立変数が年齢、従属変数が月給の回帰分析
+##変数について確認
+summary(jgss2000_f40s$szpaymox)
+summary(jgss2000_f40s$ageb)
+##回帰分析
+model1 <- lm(szpaymox ~ ageb, data = jgss2000_f40s)
+summary(model1)
+
+```
+
+年齢が一歳上がると給料は3902円あがる。
+今回、有意確率が5%以上あり、Ｆ検定では帰無仮説を棄却できていないので、決定係数が０である帰無仮説が採択され、この回帰式は母集団において一定の意味をもつことはないことがいえる。
+
+# 3.
+```{r}
+##変数について確認
+summary(jgss2000_f40s$hrtv)
+summary(jgss2000_f40s$educyr)
+##回帰分析
+model2 <- lm(hrtv ~ educyr, data = jgss2000_f40s)
+summary(model2)
+
+```
+
+教育年数が1年増えると、テレビの視聴時間は約0.26時間減少する。
+今回、有意確率が5%より小さく、Ｆ検定では帰無仮説を棄却し、対立仮説を採択するので、この回帰式は母集団において一定の意味をもつといえる。
+
+

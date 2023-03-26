@@ -1,0 +1,92 @@
+---
+title: "R第12回課題"
+author: ""
+date: "`r Sys.time()`"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+## このチャンクには何も書かないこと。
+## このチャンクを実行「ctrl」+「Enter」しましょう。
+library(tidyverse)
+```
+
+# 1.
+
+今回のロジスティック回帰において、独立変数を「この２～３年間の自身の経済状態への評価」（0P3ECN3A）、従属変数を自民党・公明党支持、統制変数として年齢、性別、教育年数を設定した。独立変数と従属変数の関係については、自身の経済状態が近年よくなってきていると評価していれば、その背景で経済政策を展開している政府への評価へは良い影響を与えると考えられるため、当時内閣を組織していた中心である自民党・公明党への支持は、自身の経済状態への評価が良いほど上昇すると予想した。
+
+```{r}
+jgss2000 <- read_csv("Data/jgss2000_v20210809.csv")
+
+##政党支持（xx8plpty）をもとに、従属変数を作成する
+
+##政党支持をリコード、自民党・公明党支持ダミーを同時に作成する
+jgss2000 <- jgss2000 %>% 
+  mutate(xx8plpty_dm = case_when(
+    xx8plpty %in% c(1,3)~1,
+    xx8plpty %in% c(2,4:10)~0
+  ))
+
+##リコードを確認
+jgss2000 %>% 
+  count(xx8plpty_dm)
+
+##変数の型を確認
+class(jgss2000$xx8plpty_dm)
+
+##確認
+jgss2000 %>% 
+  count(xx8plpty_dm)
+
+
+##独立変数として、2~3年間の自身の経済状態（OP3ECN3A）を用いる
+jgss2000 %>% 
+  count(op3ecn3a)
+
+##経済状態への評価を反転（評価が高いほど数字を大きくする）
+jgss2000 <- jgss2000 %>% 
+  mutate(op3ecn3a_dm = case_when(
+    op3ecn3a %in% c(1) ~ 3,
+    op3ecn3a %in% c(2) ~ 1,
+    op3ecn3a %in% c(3) ~ 2
+  ))
+
+##リコードを確認
+jgss2000 %>% 
+  count(op3ecn3a_dm)
+
+##統制変数として、性別ダミー作成
+jgss2000 <- jgss2000 %>% 
+  mutate(male_dm = as.factor(2 - sexa))
+jgss2000 %>% 
+  count(sexa, male_dm)
+
+##ロジスティック回帰
+logit <- glm(xx8plpty_dm ~ op3ecn3a_dm + ageb + male_dm + educyr,
+             data = jgss2000,
+             family = binomial(link = "logit"))
+summary(logit)
+
+##オッズ比
+exp(logit$coefficients)
+
+##結果
+library(modelsummary)
+cm <- c("(Intercept)" = "切片",
+        "op3ecn3a_dm" = "経済状態",
+        "ageb" = "年齢",
+        "male_dm1" = "男性ダミー",
+        "educyr" = "教育年数")
+modelsummary(list(logit),
+             fmt = 2,
+             stars = TRUE,
+             statistic = "conf.int",
+             coef_map = cm,
+             gof_map = c("nobs",
+                         "aic"),
+             title ="自身の経済状態と自民党支持")
+
+```
+
+従属変数を自民党支持、独立変数を自身の2~3年の経済状態への評価、統制変数を性別、年齢、教育年数とするロジスティック回帰分析を行った。結果は表の通りである。自身の2~3年の経済状態への評価では、経済状態への評価がよいほど当時の政権である自民党支持をするという統計的結果は得られなかった。統制変数では、年齢で統計的に有意な正の関連がみられた。
+

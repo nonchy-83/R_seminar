@@ -1,0 +1,59 @@
+---
+title: "R第5回課題"
+author: ""
+date: "`r Sys.time()`"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+## このチャンクには何も書かないこと。
+## このチャンクを実行「ctrl」+「Enter」しましょう。
+library(tidyverse)
+```
+
+# 1.
+1] 誤
+2] 誤
+3] 誤
+4] 正
+5] 正
+
+# 2.
+```{r}
+jgss2000 <- read_csv("Data/jgss2000_v20210809.csv")
+
+jgss2000 %>% 
+  count(op3trust) %>% 
+  mutate(prop = n/sum(n)*100)
+
+jgss2000 %>% 
+  drop_na(op3trust) %>% 
+  count(op3trust) %>% 
+  mutate(prop = n/sum(n)*100)
+
+```
+
+
+# 3.
+```{r}
+jgss2000 %>% 
+  select(hrtv) %>% 
+  summary()
+
+jgss2000 %>% 
+  count(complete.cases(hrtv))
+
+jgss2000 <- jgss2000 %>% 
+  mutate(sex = case_when(sexa == 1~"M",
+                         sexa == 2~"F"))
+jgss2000 %>% 
+  group_by(sex) %>% 
+  summarise(tvtime = mean(hrtv, na.rm = TRUE))
+
+jgss2000 %>% 
+  ggplot()+
+  geom_boxplot(aes(x = sex, y = hrtv))+
+  labs(x = "性別", y = "テレビの視聴時間")+
+  theme_minimal()
+```
+

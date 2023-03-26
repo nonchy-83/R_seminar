@@ -1,0 +1,41 @@
+---
+title: "R 第4回課題"
+author: ""
+date: "`r Sys.time()`"
+output: word_document
+---
+# 課題
+
+## 問１：データの概要
+```{r}
+library(tidyverse)
+library(readxl)
+
+df <- read_xlsx("Data/R03_BMI.xlsx")
+summary(df)
+```
+
+「R03_BMI.xlsx」の身長において、最小値は141.0cm、最大値は188.0cm、平均値は163.8cm、中央値は168.0cmである。また、第一四分位数は153.0cm、第三四分位数は172.0cmであり、身長168cm~172cmの範囲に人が集中していることが読み取れる。
+
+## 問２：BMIの算出
+```{r echo=FALSE}
+df <- df %>% 
+  mutate(bmi = weight/(height/100)^2)
+df.bmi <- summary(df$bmi)
+df.bmi
+```
+
+BMI値の平均は、bmi列の「Mean」が示しているとおり、22.25である。列内では上から順に、最小値・第一四分位数。中央値・平均値・第三四分位数・最大値・計測できなかった人数を示しており、体重を測定できていない人が1人いるものの、BMI値としては、22.11~24.03の範囲に人数が集中していることが伺える。
+
+## 問3：分類
+```{r}
+df <- df %>% 
+  drop_na(bmi)
+df <- df %>% 
+  mutate(type=case_when(class=="A"& bmi>=22.25~"l",
+                        class=="A"& bmi<22.25~"m",
+                        class=="B"& bmi>=22.25~"n",
+                        class=="B"& bmi<22.25~"o"))
+df
+```
+

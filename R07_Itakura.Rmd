@@ -1,0 +1,75 @@
+---
+title: "R第7回課題"
+author: ""
+date: "`r Sys.time()`"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+## このチャンクには何も書かないこと。
+## このチャンクを実行「ctrl」+「Enter」しましょう。
+library(tidyverse)
+```
+
+# 1.
+1)誤
+2)正
+3)正
+4)誤
+
+# 2.
+```{r}
+jgss2000 <- read_csv("Data/jgss2000_v20210809.csv")
+
+##無回答を除き、度数分布表を出す
+jgss2000 %>% 
+  drop_na(xx8plpty) %>% 
+  count(xx8plpty) %>% 
+  mutate(prop = n/ sum(n))
+
+##95%の信頼度で無党派層（特に支持する政党はない、わからない）の比率を区間推定する
+jgss2000 %>% 
+  filter(xx8plpty %in% c(9,10) ) %>% 
+  nrow() %>% 
+  binom.test(sum(complete.cases(jgss2000$xx8plpty)),
+             conf.level = .95)
+
+```
+95%の確からしさで、無党派層の割合は、62.5%~66.0%と推定される。
+
+# 3.
+```{r}
+##最後の仕事をやめた理由についての調査より、出産・育児を理由に仕事を辞めた人の割合を区間推定を用いて推定する。
+jgss2000 %>% 
+  drop_na(xxstpjb) %>% 
+  count(xxstpjb) %>% 
+  mutate(prop = n / sum(n))
+
+##信頼度90%の区間推定
+jgss2000 %>% 
+  filter(xxstpjb == 12) %>% 
+  nrow() %>% 
+  binom.test(sum(complete.cases(jgss2000$xxstpjb)),
+             conf.level = .90)
+
+##信頼度95%の区間推定
+jgss2000 %>% 
+  filter(xxstpjb == 12) %>% 
+  nrow() %>% 
+  binom.test(sum(complete.cases(jgss2000$xxstpjb)),
+             conf.level = .95)
+
+##信頼度99%の区間推定
+jgss2000 %>% 
+  filter(xxstpjb == 12) %>% 
+  nrow() %>% 
+  binom.test(sum(complete.cases(jgss2000$xxstpjb)),
+             conf.level = .99)
+
+```
+
+90%の確からしさで、出産・育児を理由に最後の仕事を辞めた人が6.2%~9.3%と推定される。
+95%の確からしさで、出産・育児を理由に最後の仕事を辞めた人が6.0%~9.6%と推定される。
+99%の確からしさで、出産・育児を理由に最後の仕事を辞めた人が5.5%~10.3%と推定される。
+
+

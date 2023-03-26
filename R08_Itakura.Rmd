@@ -1,0 +1,91 @@
+---
+title: "R第8回課題"
+author: ""
+date: "`r Sys.time()`"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+## このチャンクには何も書かないこと。
+## このチャンクを実行「ctrl」+「Enter」しましょう。
+library(tidyverse)
+library(gtsummary)
+jgss2000 <- read_csv("Data/jgss2000_v20210809.csv")
+```
+
+# 1.
+```{r}
+##クロス表の出力
+jgss2000 %>% 
+  tbl_cross(op2gnr,appccsxb,
+            percent = "row",
+            missing = "no")
+
+##カイ２乗検定
+jgss2000 %>% 
+  with(table(op2gnr,appccsxb)) %>%
+  chisq.test(correct = F)
+
+```
+三世代同居観と希望する子どもの性別の関連についてカイ２乗検定を行ったところ有意であった（χ²(1)=20.12, p<.001)三世代同居を望ましくないと思う人の方が、女の子を希望する割合が高かった。
+
+# 2.
+```{r}
+##独立変数を保革イデオロギー(op5radca)、従属変数を「結婚した男女は、名字をどのようにしたらよいと考えるか」(op4name)とした。
+##クロス表
+jgss2000 %>% 
+  tbl_cross(op5radca,op4name,
+            percent = "row",
+            missing = "no")
+
+##カイ２乗検定
+jgss2000 %>% 
+  with(table(op5radca,op4name)) %>% 
+  chisq.test(correct = F)
+
+```
+
+表側は数字が小さいほど保守的であり、表頭は「１：当然、妻が名字を改めて、夫のほうの名字を名のるべきだ」「２：現状では、妻が名字を改めて、夫のほうの名字を名のったほうがよい」「３：夫婦は同じ名字を名のるべきだが、どちらが名字を改めてもよい」「４：わざわざ一方に合わせる必要はなく、夫と妻は別々の名字のままでよい」である。保革イデオロギーと結婚した男女は、名字をどのようにしたらよいと考えるかの関連についてカイ２乗検定を行ったところ有意であった。(χ²(12)=192.09, p < .001)保守的であるほど、妻が名字を夫にあわせることべきだと考える人が多くなり、逆に革新的であるほど、夫婦どちらの名字でもよい、別々の名字でよいと考える人が多くなる。
+
+# 3.
+```{r}
+##本人収入の欠損値処理
+jgss2000 <- jgss2000 %>% 
+  mutate(incomex = case_when(
+    szincomx >=1 & szincomx <=19~ szincomx
+  ))
+jgss2000 <- jgss2000 %>% 
+  drop_na(incomex)
+
+##60歳未満の女性について
+jgss2000_female <- jgss2000%>% 
+  filter(ageb < 60 & sexa == 2)
+
+
+jgss2000_female %>% 
+  with(cor.test(ageb, incomex))
+
+jgss2000_female %>% 
+  ggplot()+
+  geom_jitter(aes(x = ageb, y = incomex))+
+  labs(x = "年齢", y = "収入")+
+  theme_classic()
+
+##60歳未満の男性について
+jgss2000_male <- jgss2000 %>% 
+  filter(ageb < 60 & sexa == 1)
+  
+jgss2000_male %>% 
+  with(cor.test(ageb, incomex))
+
+jgss2000_male %>% 
+  ggplot()+
+  geom_jitter(aes(x = ageb, y = incomex))+
+  labs(x = "年齢", y = "収入")+
+  theme_classic()
+```
+60歳未満の女性について、年齢と本人の収入の間には、ほとんど相関がみられなかった(r=-0.01,p=.66)。女性については、年齢が変わっても、収入に変化はほとんどみられない。
+
+60歳未満の男性について、年齢と本人の収入の間には、ほとんど相関がみられなかった(r=.45,p<.001)。男性については、年齢と収入に中程度の相関がみられ、年齢があがるほど、収入が多くなる傾向がうかがえる。
+
+
